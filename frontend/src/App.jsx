@@ -5,15 +5,18 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Employees from "./pages/Employees";
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
+          {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
@@ -22,7 +25,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute>
+                <Employees />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Redirects */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
@@ -31,9 +43,9 @@ function App() {
         position="top-right"
         toastOptions={{
           style: {
-            background: '#1e293b',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: "#1e293b",
+            color: "#fff",
+            border: "1px solid rgba(255,255,255,0.1)",
           },
         }}
       />

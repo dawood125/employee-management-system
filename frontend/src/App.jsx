@@ -6,6 +6,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
+import Tasks from "./pages/Tasks";
+import Departments from "./pages/Departments";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -30,6 +33,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Employees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <Tasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/departments"
+            element={
+              <ProtectedRoute>
+                <Departments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

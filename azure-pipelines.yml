@@ -10,9 +10,12 @@ trigger:
       - main
 
 variables:
-  vmServiceConnection: 'azure-vm-ssh'
-  vmUser: 'azureuser'
-  appPath: '/home/azureuser/employee-management-system'
+  - name: 'vmHost'
+    value: '102.37.107.205'
+  - name: 'vmUser'
+    value: 'azureuser'
+  - name: 'appPath'
+    value: '/home/azureuser/employee-management-system'
 
 stages:
   - stage: BuildFrontend
@@ -54,39 +57,37 @@ stages:
     dependsOn: BuildFrontend
     condition: succeeded()
     jobs:
-      - deployment: DeployApp
-        displayName: 'Deploy MERN app via SSH'
+      - job: DeployApp
+        displayName: 'Deploy MERN app to VM via SSH'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'production'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: current
-                  artifact: frontend-dist
-                  displayName: 'Download frontend artifact'
+        steps:
+          - task: DownloadSecureFile@1
+            name: sshKey
+            inputs:
+              secureFile: 'ems-vm-ssh-key'
+            displayName: 'Download SSH key from secure files'
 
-                - task: SSH@0
-                  inputs:
-                    sshEndpoint: '$(vmServiceConnection)'
-                    runOptions: 'commands'
-                    commands: |
-                      set -e
-                      echo "=== Starting deployment ==="
-                      cd $(appPath)
-                      git pull origin main
-                      cd $(appPath)/backend
-                      npm ci --production
-                      cd $(appPath)/frontend
-                      npm ci
-                      npm run build
-                      chmod -R o+rX $(appPath)/frontend/dist
-                      chmod o+x $(appPath) $(appPath)/frontend $(appPath)/frontend/dist
-                      pm2 restart ems-backend || pm2 start server.js --name ems-backend
-                      pm2 save
-                      sudo nginx -t
-                      sudo systemctl reload nginx
-                      echo "=== Deployment complete ==="
-                    readyTimeout: '60000'
-                  displayName: 'Execute deployment on VM'
+          - script: |
+              chmod 600 $(sshKey.secureFilePath)
+              echo "=== Starting deployment ==="
+
+              ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no $(vmUser)@$(vmHost) << 'ENDSSH'
+              set -e
+              echo "=== Connected to VM ==="
+              cd $(appPath)
+              git pull origin main
+              cd $(appPath)/backend
+              npm ci --production
+              cd $(appPath)/frontend
+              npm ci
+              npm run build
+              chmod -R o+rX $(appPath)/frontend/dist
+              chmod o+x $(appPath) $(appPath)/frontend $(appPath)/frontend/dist
+              pm2 restart ems-backend || pm2 start server.js --name ems-backend
+              pm2 save
+              sudo nginx -t
+              sudo systemctl reload nginx
+              echo "=== Deployment complete ==="
+              ENDSSH
+            displayName: 'Deploy to VM via SSH'

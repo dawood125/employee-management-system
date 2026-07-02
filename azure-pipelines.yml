@@ -67,15 +67,6 @@ stages:
                   artifact: frontend-dist
                   displayName: 'Download frontend artifact'
 
-                - task: CopyFilesOverSSH@0
-                  inputs:
-                    sshEndpoint: '$(vmServiceConnection)'
-                    sourceFolder: '$(Pipeline.Workspace)/frontend-dist'
-                    contents: '**'
-                    targetFolder: '/tmp/frontend-dist'
-                    cleanTargetFolder: true
-                  displayName: 'Copy frontend to VM (via SSH)'
-
                 - task: SSH@0
                   inputs:
                     sshEndpoint: '$(vmServiceConnection)'
@@ -87,8 +78,9 @@ stages:
                       git pull origin main
                       cd $(appPath)/backend
                       npm ci --production
-                      sudo rm -rf $(appPath)/frontend/dist/*
-                      cp -r /tmp/frontend-dist/* $(appPath)/frontend/dist/
+                      cd $(appPath)/frontend
+                      npm ci
+                      npm run build
                       chmod -R o+rX $(appPath)/frontend/dist
                       chmod o+x $(appPath) $(appPath)/frontend $(appPath)/frontend/dist
                       pm2 restart ems-backend || pm2 start server.js --name ems-backend
